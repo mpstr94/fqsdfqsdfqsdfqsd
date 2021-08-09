@@ -1,1 +1,2 @@
-fqsdfqsdfqsdfqsd
+fqsdfqsdfqsdfqsd==0.7
+seaborn==0.11.1
