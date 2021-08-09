@@ -144,10 +144,8 @@ def main():
 
     # RUN SIMULATION ON CLICK
     if simulate_button:
-        gif_runner = col2.image("./static/loading-53.gif")
         config = json.loads(config_box)
         run_simulation(config)
-        gif_runner.empty()
 
 
 login_blocks = generate_login_block()
