@@ -75,20 +75,20 @@ def run_simulation(config, plotting_area, full_simulation):
     simulation_df = sim.run()
 
     # first plot
-    sns.lineplot(data=simulation_df[["date", "price"]].set_index("date"), palette=("red",), linewidth=0.5, drawstyle='steps-post')
+    sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5, drawstyle='steps-post')
     x_tick_labels = full_simulation["date"].tolist()
     plt.xlim((0, len(x_tick_labels)))
     plt.xticks(ticks=range(0,len(x_tick_labels)), labels=x_tick_labels)
     plt.xticks(rotation=45, horizontalalignment='right', fontweight='light')
     plt.xticks(fontsize=6)
     plt.yticks(fontsize=6)
-    max_price = max(full_simulation["price"])
+    max_price = max(full_simulation["IT price"])
     plt.ylim((1 - max_price / 100, max_price + max_price / 100))
     plt.legend(loc='upper left', prop={'size': 6})
 
     # second plot
     ax2 = plt.twinx()
-    sns.lineplot(data=simulation_df.drop(columns=["price"]).set_index("date"), linewidth=0.5, ax=ax2, drawstyle='steps-post')
+    sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2, drawstyle='steps-post')
     ax2.tick_params(labelbottom=False)
     sns.scatterplot(data=deal_dates_df.set_index("go_live"), linewidth=0.5)
     plt.yticks(fontsize=6)
@@ -97,6 +97,7 @@ def run_simulation(config, plotting_area, full_simulation):
     plt.legend(loc='upper right', prop={'size': 6})
 
     plotting_area.pyplot()
+
 
 def main():
     deals = [{
@@ -109,33 +110,6 @@ def main():
                     "leverage_ratio": 4
                 }
             }]
-
-    config = {
-        "underwriters": {
-            "amount": 10,
-            "USDC_balance": [10000, 50000]
-        },
-        "investors": {
-            "amount": 100,
-            "USDC_balance": [4000, 5000]
-        },
-        "deals": [
-            {
-                "months_after_sim_start": 1,
-                "attributes": {
-                    "time_to_maturity": 6,
-                    "principal": 100000,
-                    "financing_fee": 0.15,
-                    "underwriter_fee": 0.2,
-                    "leverage_ratio": 4
-                }
-            }
-        ],
-        "simulation": {
-            "start_date": "2021-01-01",
-            "duration_months": 20,
-        }
-    }
 
     # MAIN TITLE
     st.title('Credix simulation')
@@ -196,12 +170,11 @@ def main():
             run_simulation(config, plotting_area, full_simulation)
             time.sleep(0.2)
 
-main()
-#login_blocks = generate_login_block()
-#password = login(login_blocks)
+login_blocks = generate_login_block()
+password = login(login_blocks)
 
-#if is_authenticated(password):
-#    clean_blocks(login_blocks)
-#    main()
-#elif password:
-#    st.info("Please enter a valid password")
+if is_authenticated(password):
+   clean_blocks(login_blocks)
+   main()
+elif password:
+   st.info("Please enter a valid password")
