@@ -63,11 +63,11 @@ def main():
     # COL 1
     config = {
         "underwriters": {
-            "amount": 100,
+            "amount": 10,
             "USDC_balance": [10000, 50000]
         },
         "investors": {
-            "amount": 1000,
+            "amount": 100,
             "USDC_balance": [4000, 5000]
         },
         "deals": [
@@ -75,17 +75,7 @@ def main():
                 "months_after_sim_start": 1,
                 "attributes": {
                     "time_to_maturity": 6,
-                    "principal": 10000,
-                    "financing_fee": 0.15,
-                    "underwriter_fee": 0.2,
-                    "leverage_ratio": 4
-                }
-            },
-            {
-                "months_after_sim_start": 8,
-                "attributes": {
-                    "time_to_maturity": 6,
-                    "principal": 10000,
+                    "principal": 100000,
                     "financing_fee": 0.15,
                     "underwriter_fee": 0.2,
                     "leverage_ratio": 4
