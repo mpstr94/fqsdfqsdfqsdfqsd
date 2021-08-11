@@ -94,7 +94,7 @@ def run_simulation(config):
     simulation_df = sim.run()
 
     # first plot
-    chart_1 = sns.lineplot(data=simulation_df[["date", "price"]].set_index("date"), palette=("red",), linewidth=0.5)
+    chart_1 = sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5)
     locator = mdates.MonthLocator(interval=1)
     chart_1.xaxis.set_major_locator(locator)
     plt.xticks(rotation=45,horizontalalignment='right',fontweight='light')
@@ -103,7 +103,7 @@ def run_simulation(config):
     plt.legend(prop={'size': 6})
     # second plot
     ax2 = plt.twinx()
-    chart_2 = sns.lineplot(data=simulation_df.drop(columns=["price"]).set_index("date"), linewidth=0.5, ax=ax2)
+    chart_2 = sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2)
     locator = mdates.MonthLocator(interval=1)
     chart_2.xaxis.set_major_locator(locator)
     ax2.tick_params(labelbottom=False)
