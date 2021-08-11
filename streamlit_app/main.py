@@ -57,6 +57,7 @@ def login(blocks):
 
 def run_simulation(config, plotting_area, full_simulation):
     sim = MainSimulation(config=config)
+    x_tick_labels = full_simulation["date"].tolist()
 
     deal_go_live_dates = []
     deal_maturity_dates = []
@@ -69,14 +70,15 @@ def run_simulation(config, plotting_area, full_simulation):
 
     deal_dates_df = pd.DataFrame().from_dict({"go_live": deal_go_live_dates, "maturity": deal_maturity_dates})
     deal_dates_df["deal_launch"] = 1
+    deal_dates_df["idx"] = 0
     for idx, row in deal_dates_df.iterrows():
         deal_dates_df.loc[idx, "deal_launch"] = 0 - int(idx) * 0.5
+        deal_dates_df.loc[idx, "idx"] = x_tick_labels.index(row["go_live"])
 
     simulation_df = sim.run()
 
     # first plot
     sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5, drawstyle='steps-post')
-    x_tick_labels = full_simulation["date"].tolist()
     plt.xlim((0, len(x_tick_labels)))
     plt.xticks(ticks=range(0,len(x_tick_labels)), labels=x_tick_labels)
     plt.xticks(rotation=45, horizontalalignment='right', fontweight='light')
@@ -85,12 +87,12 @@ def run_simulation(config, plotting_area, full_simulation):
     max_price = max(full_simulation["IT price"])
     plt.ylim((1 - max_price / 100, max_price + max_price / 100))
     plt.legend(loc='upper left', prop={'size': 6})
-
+    print(deal_dates_df)
     # second plot
     ax2 = plt.twinx()
     sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2, drawstyle='steps-post')
     ax2.tick_params(labelbottom=False)
-    sns.scatterplot(data=deal_dates_df.set_index("go_live"), linewidth=0.5)
+    sns.scatterplot(data=deal_dates_df.set_index("idx"), linewidth=0.5)
     plt.yticks(fontsize=6)
     max_RT = max(full_simulation["RT"])
     plt.ylim((0 - max_RT / 10, max_RT + max_RT / 10))
