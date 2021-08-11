@@ -1,6 +1,7 @@
 import streamlit as st
 import seaborn as sns
 import json
+import time
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
@@ -11,19 +12,20 @@ from fqsdfqsdfqsdfqsd.simulations import MainSimulation
 # SOME CONFIG STUFF
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-def _max_width_():
-    max_width_str = f"max-width: 90vw;"
-    st.markdown(
-        f"""
-    <style>
-    .reportview-container .main .block-container{{
-        {max_width_str}
-    }}
-    </style>    
-    """,
-        unsafe_allow_html=True,
-    )
+# def _max_width_():
+#     max_width_str = f"max-width: 90vw;"
+#     st.markdown(
+#         f"""
+#     <style>
+#     .reportview-container .main .block-container{{
+#         {max_width_str}
+#     }}
+#     </style>
+#     """,
+#         unsafe_allow_html=True,
+#     )
 # _max_width_()
+
 
 def is_authenticated(password):
     return password == "credix_admin"
@@ -52,7 +54,8 @@ def login(blocks):
 
     return blocks[1].text_input('Password')
 
-def run_simulation(config):
+
+def run_simulation(config, plotting_area, full_simulation):
     sim = MainSimulation(config=config)
 
     deal_go_live_dates = []
@@ -72,29 +75,30 @@ def run_simulation(config):
     simulation_df = sim.run()
 
     # first plot
-    chart_1 = sns.lineplot(data=simulation_df[["date", "price"]].set_index("date"), palette=("red",), linewidth=0.5)
-    locator = mdates.MonthLocator(interval=1)
-    chart_1.xaxis.set_major_locator(locator)
+    sns.lineplot(data=simulation_df[["date", "price"]].set_index("date"), palette=("red",), linewidth=0.5, drawstyle='steps-post')
+    x_tick_labels = full_simulation["date"].tolist()
+    plt.xlim((0, len(x_tick_labels)))
+    plt.xticks(ticks=range(0,len(x_tick_labels)), labels=x_tick_labels)
     plt.xticks(rotation=45, horizontalalignment='right', fontweight='light')
     plt.xticks(fontsize=6)
     plt.yticks(fontsize=6)
-    plt.legend(prop={'size': 6})
+    max_price = max(full_simulation["price"])
+    plt.ylim((1 - max_price / 100, max_price + max_price / 100))
+    plt.legend(loc='upper left', prop={'size': 6})
+
     # second plot
     ax2 = plt.twinx()
-    chart_2 = sns.lineplot(data=simulation_df.drop(columns=["price"]).set_index("date"), linewidth=0.5, ax=ax2)
-    locator = mdates.MonthLocator(interval=1)
-    chart_2.xaxis.set_major_locator(locator)
+    sns.lineplot(data=simulation_df.drop(columns=["price"]).set_index("date"), linewidth=0.5, ax=ax2, drawstyle='steps-post')
     ax2.tick_params(labelbottom=False)
     sns.scatterplot(data=deal_dates_df.set_index("go_live"), linewidth=0.5)
-    # plt.setp(ax2.get_xticklabels(), fontsize=6)
     plt.yticks(fontsize=6)
-    plt.legend(prop={'size': 6})
+    max_RT = max(full_simulation["RT"])
+    plt.ylim((0 - max_RT / 10, max_RT + max_RT / 10))
+    plt.legend(loc='upper right', prop={'size': 6})
 
-    simulation_plot = st.pyplot()
+    plotting_area.pyplot()
 
 def main():
-    # COL 1
-
     deals = [{
                 "months_after_sim_start": 1,
                 "attributes": {
@@ -105,6 +109,7 @@ def main():
                     "leverage_ratio": 4
                 }
             }]
+
     config = {
         "underwriters": {
             "amount": 10,
@@ -154,11 +159,14 @@ def main():
     st.subheader("deals")
     deals_input = st.text_area('deals', value=json.dumps(deals, indent=2), height=600)
 
-    simulate_button = st.button(label="simulate")
+    row4_1, row4_2 = st.columns((6,1))
+    simulate_button = row4_2.button(label="simulate")
+    st.write("##")
 
-    # RUN SIMULATION ON CLICK
-    if simulate_button:
-        # config = json.loads(config)
+    def get_config(month=False):
+        if not month:
+            month = duration_input
+
         config = {
             "investors": {
                 "amount": n_investors_input,
@@ -170,15 +178,23 @@ def main():
             },
             "simulation": {
                 "start_date": start_date_input.strftime("%Y-%m-%d"),
-                "duration_months": duration_input,
+                "duration_months": month,
             },
             "deals": json.loads(deals_input)
         }
 
-        st.header("result")
-        run_simulation(config)
+        return config
 
-    run_simulation(config)
+    # RUN SIMULATION ON CLICK
+    if simulate_button:
+        st.header("Simulation")
+        plotting_area = st.empty()
+        full_simulation = MainSimulation(config=get_config()).run()
+        for month in range(1, duration_input + 1):
+            config = get_config(month)
+
+            run_simulation(config, plotting_area, full_simulation)
+            time.sleep(0.2)
 
 main()
 #login_blocks = generate_login_block()
