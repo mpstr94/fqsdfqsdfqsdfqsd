@@ -12,20 +12,6 @@ from fqsdfqsdfqsdfqsd.simulations import MainSimulation
 # SOME CONFIG STUFF
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-# def _max_width_():
-#     max_width_str = f"max-width: 90vw;"
-#     st.markdown(
-#         f"""
-#     <style>
-#     .reportview-container .main .block-container{{
-#         {max_width_str}
-#     }}
-#     </style>
-#     """,
-#         unsafe_allow_html=True,
-#     )
-# _max_width_()
-
 
 def is_authenticated(password):
     return password == "credix_admin"
@@ -64,7 +50,7 @@ def run_simulation(config, plotting_area, full_simulation):
     for deal_config in config["deals"]:
         deal_go_live_date = datetime.strptime(config["simulation"]["start_date"], "%Y-%m-%d") + relativedelta(
             months=deal_config["months_after_sim_start"])
-        deal_maturity_date = deal_go_live_date + relativedelta(months=deal_config["attributes"]["time_to_maturity"])
+        deal_maturity_date = deal_go_live_date + relativedelta(months=deal_config["time_to_maturity"])
         deal_go_live_dates.append(deal_go_live_date.strftime("%Y/%m/%d"))
         deal_maturity_dates.append(deal_maturity_date.strftime("%Y/%m/%d"))
 
@@ -87,7 +73,6 @@ def run_simulation(config, plotting_area, full_simulation):
     max_price = max(full_simulation["IT price"])
     plt.ylim((1 - max_price / 100, max_price + max_price / 100))
     plt.legend(loc='upper left', prop={'size': 6})
-    print(deal_dates_df)
     # second plot
     ax2 = plt.twinx()
     sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2, drawstyle='steps-post')
@@ -101,18 +86,27 @@ def run_simulation(config, plotting_area, full_simulation):
     plotting_area.pyplot()
 
 
-def main():
-    deals = [{
-                "months_after_sim_start": 1,
-                "attributes": {
-                    "time_to_maturity": 6,
-                    "principal": 100000,
-                    "financing_fee": 0.15,
-                    "underwriter_fee": 0.2,
-                    "leverage_ratio": 4
-                }
-            }]
+def add_row_to_dataframe(dataframe_area, deal_row):
+    try:
+        st.session_state.df = st.session_state.df.append(deal_row, ignore_index=True)
+        st.session_state.df = st.session_state.df.astype({
+            "months_after_sim_start": 'int32',
+            "time_to_maturity": 'int32',
+            "principal": 'int32',
+            "leverage_ratio": 'int32'
+        })
+        dataframe_area.dataframe(st.session_state.df)
+    except:
+        pass
 
+
+def remove_row_from_dataframe(dataframe_area, index):
+    if index in st.session_state.df.index:
+        st.session_state.df = st.session_state.df.drop(index).reset_index(drop=True)
+        dataframe_area.dataframe(st.session_state.df)
+
+
+def main():
     # MAIN TITLE
     st.title('Credix simulation')
 
@@ -122,21 +116,49 @@ def main():
     start_date_input = row1_1.date_input('start date of the simulation', datetime.strptime("2021-01-01", "%Y-%m-%d"))
     duration_input = row1_2.number_input('duration (months) of the simulation', value=20)
 
-    st.subheader("investors")
     row2_1, row2_2 = st.columns(2)
-    n_investors_input = row2_1.number_input('number of investors', value=100)
-    investors_USDC_balance_input = row2_2.slider('initial USDC balance', 0, 10000, (4000, 7000))
+    row2_1.subheader("investors")
+    n_investors_input = row2_1.number_input('number of investors', min_value=0, value=100)
+    row2_2.subheader("underwriters")
+    n_underwriters_input = row2_2.number_input('number of underwriters', min_value=0, value=10)
 
-    st.subheader("underwriters")
-    row3_1, row3_2 = st.columns(2)
-    n_underwriters_input = row3_1.number_input('number of underwriters', value=10)
-    underwriters_USDC_balance_input = row3_2.slider('initial USDC balance', 0, 100000, (10000, 50000))
+    # Create an empty dataframe
+    deals = [{
+        "months_after_sim_start": 1,
+        "time_to_maturity": 6,
+        "principal": 100000,
+        "financing_fee": 0.15,
+        "underwriter_fee": 0.2,
+        "leverage_ratio": 4
+    }]
+    deals_df = pd.DataFrame.from_dict(deals)
+
+    st.subheader("add deals")
+    row3_1, row3_2, row3_3 = st.columns(3)
+    months_after_sim_start_input = row3_1.number_input("go live (months)", value=1)
+    time_to_maturity_input = row3_2.number_input("time to maturity", value=6)
+    principal_input = row3_3.number_input("principal", value=100000)
+    row4_1, row4_2, row4_3 = st.columns(3)
+    financing_fee_input = row4_1.number_input("financing fee", value=0.15)
+    underwriter_fee_input = row4_2.number_input("underwriter fee", value=0.2)
+    leverage_ratio_input = row4_3.number_input("leverage ratio", value=4)
+
+    add_deal_button = st.button("add deal")
+
+    st.subheader("remove deals")
+    row5_1, _, _ = st.columns(3)
+    index_to_remove_input = row5_1.number_input("index to remove", value=0)
+    remove_deal_button = st.button("remove deal by index")
 
     st.subheader("deals")
-    deals_input = st.text_area('deals', value=json.dumps(deals, indent=2), height=600)
+    # persist state of dataframe
+    if 'df' not in st.session_state:
+        st.session_state.df = deals_df
+    dataframe_area = st.empty()
+    dataframe_area.dataframe(st.session_state.df)
 
-    row4_1, row4_2 = st.columns((6,1))
-    simulate_button = row4_2.button(label="simulate")
+    row6_1, row6_2 = st.columns((6,1))
+    simulate_button = row6_2.button(label="simulate")
     st.write("##")
 
     def get_config(month=False):
@@ -146,31 +168,48 @@ def main():
         config = {
             "investors": {
                 "amount": n_investors_input,
-                "USDC_balance": list(investors_USDC_balance_input)
+                "USDC_balance": [4000,5000]
             },
             "underwriters": {
                 "amount": n_underwriters_input,
-                "USDC_balance": list(underwriters_USDC_balance_input)
+                "USDC_balance": [10000, 50000]
             },
             "simulation": {
                 "start_date": start_date_input.strftime("%Y-%m-%d"),
                 "duration_months": month,
             },
-            "deals": json.loads(deals_input)
+            "deals": st.session_state.df.to_dict("records")
         }
 
         return config
+
+    # DEALS INTERACTIVE DF
+    if add_deal_button:
+        # update dataframe state
+        deal_row = {
+            "months_after_sim_start": months_after_sim_start_input,
+            "time_to_maturity": time_to_maturity_input,
+            "principal": principal_input,
+            "financing_fee": financing_fee_input,
+            "underwriter_fee": underwriter_fee_input,
+            "leverage_ratio": leverage_ratio_input
+        }
+        add_row_to_dataframe(dataframe_area, deal_row)
+
+    if remove_deal_button:
+        remove_row_from_dataframe(dataframe_area, index_to_remove_input)
 
     # RUN SIMULATION ON CLICK
     if simulate_button:
         st.header("Simulation")
         plotting_area = st.empty()
+        print(get_config())
         full_simulation = MainSimulation(config=get_config()).run()
         for month in range(1, duration_input + 1):
             config = get_config(month)
-
             run_simulation(config, plotting_area, full_simulation)
             time.sleep(0.2)
+
 
 login_blocks = generate_login_block()
 password = login(login_blocks)
