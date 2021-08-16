@@ -50,7 +50,7 @@ All stakeholders are rewarded using Credix Tokens (CRED). Underwriters and borro
 
 
 def is_authenticated(password):
-    return password == "p"
+    return password == "c"
 
 
 def generate_login_block():
@@ -291,7 +291,18 @@ if is_authenticated(password):
     top_of_page_html = '''
     <script language="javascript">
      console.log("scrolling to top")
-     document.getElementById('goToTop').click();
+     function docReady(fn) {
+            // see if DOM is already available
+            if (document.readyState === "complete" || document.readyState === "interactive") {
+                // call on next available tick
+                setTimeout(fn, 1);
+            } else {
+                document.addEventListener("DOMContentLoaded", fn);
+            }
+        }    
+    docReady(function() {
+        document.getElementById('goToTop').click();
+    });
     </script>
     '''
     components.html(top_of_page_html)
