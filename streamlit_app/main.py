@@ -22,8 +22,9 @@ button {
 }
 </style>""", unsafe_allow_html=True)
 
+
 # hidden div with anchor
-st.markdown("<div id='linkto_top'></div>", unsafe_allow_html=True)
+st.markdown("<div id='start'></div>", unsafe_allow_html=True)
 
 stakeholders_text = '''
 ### Borrowers
@@ -48,108 +49,114 @@ On a monthly basis, the borrower performs an interest repayment. Those re-paymen
 All stakeholders are rewarded using Credix Tokens (CRED). Underwriters and borrowers receive an amount of BTs depending on how much USDC they stake in the credit fund, and the duration they stay locked. Borrowers get BTs if they re-pay on time and the correct amount. The supply of BTs will decrease over time, and they can be used to participate in governance decisions, and get other benefits such as early access to deals.
 '''
 
+#
+# def is_authenticated(password):
+#     return password == "c"
+#
+#
+# def generate_login_block():
+#     block1 = st.empty()
+#     block2 = st.empty()
+#
+#     return block1, block2
+#
+#
+# def clean_blocks(blocks):
+#     for block in blocks:
+#         block.empty()
+#
+#
+# def login(blocks):
+#     blocks[0].markdown("""
+#             <style>
+#                 input {
+#                     -webkit-text-security: disc;
+#                 }
+#             </style>
+#         """, unsafe_allow_html=True)
+#
+#     return blocks[1].text_input('Password')
 
-def is_authenticated(password):
-    return password == "c"
 
-
-def generate_login_block():
-    block1 = st.empty()
-    block2 = st.empty()
-
-    return block1, block2
-
-
-def clean_blocks(blocks):
-    for block in blocks:
-        block.empty()
-
-
-def login(blocks):
-    blocks[0].markdown("""
-            <style>
-                input {
-                    -webkit-text-security: disc;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-
-    return blocks[1].text_input('Password')
-
-
-def run_simulation(config, plotting_areas):
-    sim = MainSimulation(config=config)
-    simulation_df = sim.run()
-    x_tick_labels = simulation_df["date"].tolist()
-
-    deal_go_live_dates = []
-    deal_maturity_dates = []
-    for deal_config in config["deals"]:
-        deal_go_live_date = datetime.strptime(config["simulation"]["start_date"], "%Y-%m-%d") + relativedelta(
-            months=deal_config["months_after_sim_start"])
-        deal_maturity_date = deal_go_live_date + relativedelta(months=deal_config["time_to_maturity"])
-        deal_go_live_dates.append(deal_go_live_date.strftime("%Y/%m/%d"))
-        deal_maturity_dates.append(deal_maturity_date.strftime("%Y/%m/%d"))
-
-    deal_dates_df = pd.DataFrame().from_dict({"go_live": deal_go_live_dates, "maturity": deal_maturity_dates})
-    deal_dates_df["deal_launch"] = 1
-    deal_dates_df["idx"] = 0
-    for idx, row in deal_dates_df.iterrows():
-        deal_dates_df.loc[idx, "deal_launch"] = 0 - int(idx) * 0.5
-        deal_dates_df.loc[idx, "idx"] = x_tick_labels.index(row["go_live"])
-
-    # first plot
-    sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5, drawstyle='steps-post')
-    plt.xlim((0, len(x_tick_labels)))
-    plt.xticks(ticks=range(0,len(x_tick_labels)), labels=x_tick_labels)
+def set_x_ticks(plt):
     plt.xticks(rotation=45, horizontalalignment='right', fontweight='light')
     plt.xticks(fontsize=6)
     plt.yticks(fontsize=6)
+
+
+def plot_deals(deal_go_live):
+    for deal in deal_go_live:
+        plt.axvline(x=deal, linewidth=0.3, linestyle='dashed', label='deal goes live', color='black')
+
+
+def remove_duplicate_labels(plt):
+    handles, labels = plt.gca().get_legend_handles_labels()
+    i = 1
+    while i < len(labels):
+        if labels[i] in labels[:i]:
+            del (labels[i])
+            del (handles[i])
+        else:
+            i += 1
+
+    plt.legend(handles, labels, prop={'size': 6})
+
+def run_simulation(config, plotting_areas):
+    sim = MainSimulation(config=config)
+    simulation_df, deal_go_live = sim.run()
+    locator = mdates.MonthLocator(interval=1)
+
+    # first plot
+    chart_1 = sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5)
+    chart_1.xaxis.set_major_locator(locator)
+    set_x_ticks(plt)
     max_price = max(simulation_df["IT price"])
     plt.ylim((1 - max_price / 100, max_price + max_price / 100))
     plt.legend(loc='upper left', prop={'size': 6})
     # second axis
     ax2 = plt.twinx()
-    sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2, drawstyle='steps-post')
+    chart_2 = sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2)
+    plot_deals(deal_go_live)
     ax2.tick_params(labelbottom=False)
-    sns.scatterplot(data=deal_dates_df.set_index("idx"), linewidth=0.5)
+    chart_2.xaxis.set_major_locator(locator)
     plt.yticks(fontsize=6)
     max_RT = max(simulation_df["RT"])
     plt.ylim((0 - max_RT / 10, max_RT + max_RT / 10))
-    plt.legend(loc='upper right', prop={'size': 6})
+    remove_duplicate_labels(plt)
     plotting_areas[0].pyplot()
 
     # second plot
-    sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5,
-                 drawstyle='steps-post')
-    plt.xlim((0, len(x_tick_labels)))
-    plt.xticks(ticks=range(0, len(x_tick_labels)), labels=x_tick_labels)
-    plt.xticks(rotation=45, horizontalalignment='right', fontweight='light')
-    plt.xticks(fontsize=6)
-    plt.yticks(fontsize=6)
-    plt.legend(loc='upper left', prop={'size': 6})
+    chart_3 = sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5)
+    plot_deals(deal_go_live)
+    chart_3.xaxis.set_major_locator(locator)
+    set_x_ticks(plt)
+    remove_duplicate_labels(plt)
     plotting_areas[1].pyplot()
 
     # second plot
-    sns.lineplot(data=simulation_df[["date", "repayment pool"]].set_index("date"), palette=("red",), linewidth=0.5,
-                 drawstyle='steps-post')
-    plt.xlim((0, len(x_tick_labels)))
-    plt.xticks(ticks=range(0, len(x_tick_labels)), labels=x_tick_labels)
-    plt.xticks(rotation=45, horizontalalignment='right', fontweight='light')
-    plt.xticks(fontsize=6)
-    plt.yticks(fontsize=6)
-    plt.legend(loc='upper left', prop={'size': 6})
+    chart_4 = sns.lineplot(data=simulation_df[["date", "repayment pool"]].set_index("date"), palette=("red",), linewidth=0.5)
+    plot_deals(deal_go_live)
+    chart_4.xaxis.set_major_locator(locator)
+    set_x_ticks(plt)
+    remove_duplicate_labels(plt)
     plotting_areas[2].pyplot()
+
+    # third plot
+    chart_5 = sns.lineplot(data=simulation_df[["date", "APY 30d trailing"]].set_index("date"), palette=("red",), linewidth=0.5,)
+    plot_deals(deal_go_live)
+    chart_5.xaxis.set_major_locator(locator)
+    set_x_ticks(plt)
+    remove_duplicate_labels(plt)
+    plotting_areas[3].pyplot()
 
 
 def add_row_to_dataframe(dataframe_area, deal_row):
     try:
         st.session_state.df = st.session_state.df.append(deal_row, ignore_index=True)
         st.session_state.df = st.session_state.df.astype({
-            "months_after_sim_start": 'int32',
-            "time_to_maturity": 'int32',
-            "principal": 'int32',
-            "leverage_ratio": 'int32'
+            "time_to_maturity": 'int64',
+            "principal": 'int64',
+            "leverage_ratio": 'int64'
         })
         dataframe_area.dataframe(st.session_state.df)
     except:
@@ -162,19 +169,25 @@ def remove_row_from_dataframe(dataframe_area, index):
         dataframe_area.dataframe(st.session_state.df)
 
 
-#def render_simulation():
-# MAIN TITLE
+##############
+# MAIN TITLE #
+##############
 st.title('Credix simulation')
 st.text("We've built a fully fledged simulation model to test our token flows, and crypto economics. ")
-
 st.markdown("""---""")
-# SET COLUMNS
+
+#################
+# CONFIGURATION #
+#################
 st.subheader("configuration")
 row1_1, row1_2 = st.columns(2)
 start_date_input = row1_1.date_input('start date of the simulation', datetime.strptime("2021-01-01", "%Y-%m-%d"))
 duration_input = row1_2.number_input('duration (months) of the simulation', value=20)
-
 st.markdown("""---""")
+
+################
+# STAKEHOLDERS #
+################
 st.subheader("STAKEHOLDERS")
 stakeholder_expander = st.expander(label='Learn about our stakeholders')
 with stakeholder_expander:
@@ -185,11 +198,13 @@ row2_1.subheader("investors")
 n_investors_input = row2_1.number_input('number of investors', min_value=0, value=100)
 row2_2.subheader("underwriters")
 n_underwriters_input = row2_2.number_input('number of underwriters', min_value=0, value=10)
-
 st.markdown("""---""")
-# Create an empty dataframe
+
+#########
+# DEALS #
+#########
 deals = [{
-    "months_after_sim_start": 1,
+    "deal_go_live": "2021-02-01",
     "time_to_maturity": 6,
     "principal": 100000,
     "financing_fee": 0.15,
@@ -213,7 +228,8 @@ row3_1.subheader("add deals")
 row3_4.subheader("remove deals")
 
 row4_1, row4_2, row4_3, row4_4 = st.columns((3, 3, 0.5, 3))
-months_after_sim_start_input = row4_1.number_input("go live (months)", value=1)
+deal_go_live_input = row4_1.date_input('go live date', datetime.strptime("2021-02-01", "%Y-%m-%d"))
+# months_after_sim_start_input = row4_1.number_input("go live (months)", value=1)
 time_to_maturity_input = row4_2.number_input("time to maturity", value=6)
 principal_input = row4_1.number_input("principal", value=100000)
 financing_fee_input = row4_2.number_input("financing fee", value=0.15)
@@ -225,10 +241,30 @@ add_deal_button = row4_1.button("add deal")
 
 index_to_remove_input = row4_4.number_input("index to remove", value=0)
 remove_deal_button = row4_4.button("remove deal")
-
 st.markdown("""---""")
+
+# DEALS INTERACTIVE DF
+if add_deal_button:
+    # update dataframe state
+    deal_row = {
+        "deal_go_live": deal_go_live_input.strftime("%Y-%m-%d"),
+        "time_to_maturity": time_to_maturity_input,
+        "principal": principal_input,
+        "financing_fee": financing_fee_input,
+        "underwriter_fee": underwriter_fee_input,
+        "leverage_ratio": leverage_ratio_input
+    }
+    add_row_to_dataframe(dataframe_area, deal_row)
+
+if remove_deal_button:
+    remove_row_from_dataframe(dataframe_area, index_to_remove_input)
+
+##############
+# SIMULATION #
+##############
 simulate_button = st.button(label="simulate")
 st.write("##")
+
 
 def get_config():
     config = {
@@ -249,21 +285,6 @@ def get_config():
 
     return config
 
-# DEALS INTERACTIVE DF
-if add_deal_button:
-    # update dataframe state
-    deal_row = {
-        "months_after_sim_start": months_after_sim_start_input,
-        "time_to_maturity": time_to_maturity_input,
-        "principal": principal_input,
-        "financing_fee": financing_fee_input,
-        "underwriter_fee": underwriter_fee_input,
-        "leverage_ratio": leverage_ratio_input
-    }
-    add_row_to_dataframe(dataframe_area, deal_row)
-
-if remove_deal_button:
-    remove_row_from_dataframe(dataframe_area, index_to_remove_input)
 
 # RUN SIMULATION ON CLICK
 if simulate_button:
@@ -277,29 +298,20 @@ if simulate_button:
     plotting_areas = [plotting_area_1, plotting_area_2, plotting_area_3, plotting_area_4, plotting_area_5, plotting_area_6]
     run_simulation(get_config(), plotting_areas)
 
-st.markdown("<a href='#linkto_top' id='goToTop'>Back to top</a>", unsafe_allow_html=True)
+st.markdown("<a href='#start' id='goToTop'>Back to top</a>", unsafe_allow_html=True)
 
 
 ## LOGIN PART
 #login_blocks = generate_login_block()
 #password = login(login_blocks)
-
-# render_simulation()
+#
+# # render_simulation()
 top_of_page_html = '''
     <script language="javascript">
-     console.log("scrolling to top")
-     function docReady(fn) {
-            // see if DOM is already available
-            if (document.readyState === "complete" || document.readyState === "interactive") {
-                // call on next available tick
-                setTimeout(fn, 1);
-            } else {
-                document.addEventListener("DOMContentLoaded", fn);
-            }
-        }    
-    docReady(function() {
-        document.getElementById('goToTop').click();
-    });
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.getElementById('goToTop').click();
+      console.log("scrolling to top");
+    })
     </script>
     '''
 components.html(top_of_page_html)
