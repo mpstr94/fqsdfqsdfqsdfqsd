@@ -162,133 +162,130 @@ def remove_row_from_dataframe(dataframe_area, index):
         dataframe_area.dataframe(st.session_state.df)
 
 
-def render_simulation():
-    # MAIN TITLE
-    st.title('Credix simulation')
-    st.text("We've built a fully fledged simulation model to test our token flows, and crypto economics. ")
+#def render_simulation():
+# MAIN TITLE
+st.title('Credix simulation')
+st.text("We've built a fully fledged simulation model to test our token flows, and crypto economics. ")
 
-    st.markdown("""---""")
-    # SET COLUMNS
-    st.subheader("configuration")
-    row1_1, row1_2 = st.columns(2)
-    start_date_input = row1_1.date_input('start date of the simulation', datetime.strptime("2021-01-01", "%Y-%m-%d"))
-    duration_input = row1_2.number_input('duration (months) of the simulation', value=20)
+st.markdown("""---""")
+# SET COLUMNS
+st.subheader("configuration")
+row1_1, row1_2 = st.columns(2)
+start_date_input = row1_1.date_input('start date of the simulation', datetime.strptime("2021-01-01", "%Y-%m-%d"))
+duration_input = row1_2.number_input('duration (months) of the simulation', value=20)
 
-    st.markdown("""---""")
-    st.subheader("STAKEHOLDERS")
-    stakeholder_expander = st.expander(label='Learn about our stakeholders')
-    with stakeholder_expander:
-        st.markdown(stakeholders_text)
+st.markdown("""---""")
+st.subheader("STAKEHOLDERS")
+stakeholder_expander = st.expander(label='Learn about our stakeholders')
+with stakeholder_expander:
+    st.markdown(stakeholders_text)
 
-    row2_1, row2_2 = st.columns(2)
-    row2_1.subheader("investors")
-    n_investors_input = row2_1.number_input('number of investors', min_value=0, value=100)
-    row2_2.subheader("underwriters")
-    n_underwriters_input = row2_2.number_input('number of underwriters', min_value=0, value=10)
+row2_1, row2_2 = st.columns(2)
+row2_1.subheader("investors")
+n_investors_input = row2_1.number_input('number of investors', min_value=0, value=100)
+row2_2.subheader("underwriters")
+n_underwriters_input = row2_2.number_input('number of underwriters', min_value=0, value=10)
 
-    st.markdown("""---""")
-    # Create an empty dataframe
-    deals = [{
-        "months_after_sim_start": 1,
-        "time_to_maturity": 6,
-        "principal": 100000,
-        "financing_fee": 0.15,
-        "underwriter_fee": 0.2,
-        "leverage_ratio": 4
-    }]
-    deals_df = pd.DataFrame.from_dict(deals)
+st.markdown("""---""")
+# Create an empty dataframe
+deals = [{
+    "months_after_sim_start": 1,
+    "time_to_maturity": 6,
+    "principal": 100000,
+    "financing_fee": 0.15,
+    "underwriter_fee": 0.2,
+    "leverage_ratio": 4
+}]
+deals_df = pd.DataFrame.from_dict(deals)
 
-    st.subheader("DEALS")
-    deal_expander = st.expander(label='Learn about deals')
-    with deal_expander:
-        st.markdown(deals_text)
-    # persist state of dataframe
-    if 'df' not in st.session_state:
-        st.session_state.df = deals_df
-    dataframe_area = st.empty()
-    dataframe_area.dataframe(st.session_state.df)
+st.subheader("DEALS")
+deal_expander = st.expander(label='Learn about deals')
+with deal_expander:
+    st.markdown(deals_text)
+# persist state of dataframe
+if 'df' not in st.session_state:
+    st.session_state.df = deals_df
+dataframe_area = st.empty()
+dataframe_area.dataframe(st.session_state.df)
 
-    row3_1, _, _, row3_4 = st.columns((3, 3, 0.5, 3))
-    row3_1.subheader("add deals")
-    row3_4.subheader("remove deals")
+row3_1, _, _, row3_4 = st.columns((3, 3, 0.5, 3))
+row3_1.subheader("add deals")
+row3_4.subheader("remove deals")
 
-    row4_1, row4_2, row4_3, row4_4 = st.columns((3, 3, 0.5, 3))
-    months_after_sim_start_input = row4_1.number_input("go live (months)", value=1)
-    time_to_maturity_input = row4_2.number_input("time to maturity", value=6)
-    principal_input = row4_1.number_input("principal", value=100000)
-    financing_fee_input = row4_2.number_input("financing fee", value=0.15)
-    underwriter_fee_input = row4_1.number_input("underwriter fee", value=0.2)
-    leverage_ratio_input = row4_2.number_input("leverage ratio", value=4)
+row4_1, row4_2, row4_3, row4_4 = st.columns((3, 3, 0.5, 3))
+months_after_sim_start_input = row4_1.number_input("go live (months)", value=1)
+time_to_maturity_input = row4_2.number_input("time to maturity", value=6)
+principal_input = row4_1.number_input("principal", value=100000)
+financing_fee_input = row4_2.number_input("financing fee", value=0.15)
+underwriter_fee_input = row4_1.number_input("underwriter fee", value=0.2)
+leverage_ratio_input = row4_2.number_input("leverage ratio", value=4)
 
-    row4_1, _, _ = st.columns((6, 0.5, 3))
-    add_deal_button = row4_1.button("add deal")
+row4_1, _, _ = st.columns((6, 0.5, 3))
+add_deal_button = row4_1.button("add deal")
 
-    index_to_remove_input = row4_4.number_input("index to remove", value=0)
-    remove_deal_button = row4_4.button("remove deal")
+index_to_remove_input = row4_4.number_input("index to remove", value=0)
+remove_deal_button = row4_4.button("remove deal")
 
-    st.markdown("""---""")
-    simulate_button = st.button(label="simulate")
-    st.write("##")
+st.markdown("""---""")
+simulate_button = st.button(label="simulate")
+st.write("##")
 
-    def get_config():
-        config = {
-            "investors": {
-                "amount": n_investors_input,
-                "USDC_balance": [4000,5000]
-            },
-            "underwriters": {
-                "amount": n_underwriters_input,
-                "USDC_balance": [10000, 50000]
-            },
-            "simulation": {
-                "start_date": start_date_input.strftime("%Y-%m-%d"),
-                "duration_months": duration_input,
-            },
-            "deals": st.session_state.df.to_dict("records")
-        }
+def get_config():
+    config = {
+        "investors": {
+            "amount": n_investors_input,
+            "USDC_balance": [40000,50000]
+        },
+        "underwriters": {
+            "amount": n_underwriters_input,
+            "USDC_balance": [100000, 500000]
+        },
+        "simulation": {
+            "start_date": start_date_input.strftime("%Y-%m-%d"),
+            "duration_months": duration_input,
+        },
+        "deals": st.session_state.df.to_dict("records")
+    }
 
-        return config
+    return config
 
-    # DEALS INTERACTIVE DF
-    if add_deal_button:
-        # update dataframe state
-        deal_row = {
-            "months_after_sim_start": months_after_sim_start_input,
-            "time_to_maturity": time_to_maturity_input,
-            "principal": principal_input,
-            "financing_fee": financing_fee_input,
-            "underwriter_fee": underwriter_fee_input,
-            "leverage_ratio": leverage_ratio_input
-        }
-        add_row_to_dataframe(dataframe_area, deal_row)
+# DEALS INTERACTIVE DF
+if add_deal_button:
+    # update dataframe state
+    deal_row = {
+        "months_after_sim_start": months_after_sim_start_input,
+        "time_to_maturity": time_to_maturity_input,
+        "principal": principal_input,
+        "financing_fee": financing_fee_input,
+        "underwriter_fee": underwriter_fee_input,
+        "leverage_ratio": leverage_ratio_input
+    }
+    add_row_to_dataframe(dataframe_area, deal_row)
 
-    if remove_deal_button:
-        remove_row_from_dataframe(dataframe_area, index_to_remove_input)
+if remove_deal_button:
+    remove_row_from_dataframe(dataframe_area, index_to_remove_input)
 
-    # RUN SIMULATION ON CLICK
-    if simulate_button:
-        st.header("Simulation")
-        plotting_area_1 = st.empty()
-        plotting_area_2 = st.empty()
-        plotting_area_3 = st.empty()
-        plotting_area_4 = st.empty()
-        plotting_area_5 = st.empty()
-        plotting_area_6 = st.empty()
-        plotting_areas = [plotting_area_1, plotting_area_2, plotting_area_3, plotting_area_4, plotting_area_5, plotting_area_6]
-        run_simulation(get_config(), plotting_areas)
+# RUN SIMULATION ON CLICK
+if simulate_button:
+    st.header("Simulation")
+    plotting_area_1 = st.empty()
+    plotting_area_2 = st.empty()
+    plotting_area_3 = st.empty()
+    plotting_area_4 = st.empty()
+    plotting_area_5 = st.empty()
+    plotting_area_6 = st.empty()
+    plotting_areas = [plotting_area_1, plotting_area_2, plotting_area_3, plotting_area_4, plotting_area_5, plotting_area_6]
+    run_simulation(get_config(), plotting_areas)
 
-    st.markdown("<a href='#linkto_top' id='goToTop'>Back to top</a>", unsafe_allow_html=True)
+st.markdown("<a href='#linkto_top' id='goToTop'>Back to top</a>", unsafe_allow_html=True)
 
 
-# LOGIN PART
-login_blocks = generate_login_block()
-password = login(login_blocks)
+## LOGIN PART
+#login_blocks = generate_login_block()
+#password = login(login_blocks)
 
-if is_authenticated(password):
-    clean_blocks(login_blocks)
-    render_simulation()
-    # SCROLL TO TOP OF PAGE
-    top_of_page_html = '''
+# render_simulation()
+top_of_page_html = '''
     <script language="javascript">
      console.log("scrolling to top")
      function docReady(fn) {
@@ -305,6 +302,29 @@ if is_authenticated(password):
     });
     </script>
     '''
-    components.html(top_of_page_html)
-elif password:
-    st.info("Please enter a valid password")
+components.html(top_of_page_html)
+
+# if is_authenticated(password):
+#     clean_blocks(login_blocks)
+#     render_simulation()
+#     # SCROLL TO TOP OF PAGE
+#     top_of_page_html = '''
+#     <script language="javascript">
+#      console.log("scrolling to top")
+#      function docReady(fn) {
+#             // see if DOM is already available
+#             if (document.readyState === "complete" || document.readyState === "interactive") {
+#                 // call on next available tick
+#                 setTimeout(fn, 1);
+#             } else {
+#                 document.addEventListener("DOMContentLoaded", fn);
+#             }
+#         }
+#     docReady(function() {
+#         document.getElementById('goToTop').click();
+#     });
+#     </script>
+#     '''
+#     components.html(top_of_page_html)
+# elif password:
+#     st.info("Please enter a valid password")
