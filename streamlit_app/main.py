@@ -78,6 +78,15 @@ All stakeholders are rewarded using Credix Tokens (CRED). Underwriters and borro
 #     return blocks[1].text_input('Password')
 
 
+def plot_chart(plotting_area, simulation_df, deal_go_live, column, locator):
+    chart = sns.lineplot(data=simulation_df[["date", column]].set_index("date"), palette=("red",), linewidth=0.5)
+    plot_deals(deal_go_live)
+    chart.xaxis.set_major_locator(locator)
+    set_x_ticks(plt)
+    remove_duplicate_labels(plt)
+    plotting_area.pyplot()
+
+
 def set_x_ticks(plt):
     plt.xticks(rotation=45, horizontalalignment='right', fontweight='light')
     plt.xticks(fontsize=6)
@@ -101,53 +110,37 @@ def remove_duplicate_labels(plt):
 
     plt.legend(handles, labels, prop={'size': 6})
 
+
 def run_simulation(config, plotting_areas):
     sim = MainSimulation(config=config)
     simulation_df, deal_go_live = sim.run()
     locator = mdates.MonthLocator(interval=1)
 
     # first plot
-    chart_1 = sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5)
-    chart_1.xaxis.set_major_locator(locator)
-    set_x_ticks(plt)
-    max_price = max(simulation_df["IT price"])
-    plt.ylim((1 - max_price / 100, max_price + max_price / 100))
-    plt.legend(loc='upper left', prop={'size': 6})
-    # second axis
-    ax2 = plt.twinx()
-    chart_2 = sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2)
-    plot_deals(deal_go_live)
-    ax2.tick_params(labelbottom=False)
-    chart_2.xaxis.set_major_locator(locator)
-    plt.yticks(fontsize=6)
-    max_RT = max(simulation_df["RT"])
-    plt.ylim((0 - max_RT / 10, max_RT + max_RT / 10))
-    remove_duplicate_labels(plt)
-    plotting_areas[0].pyplot()
+    # chart_1 = sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5)
+    # chart_1.xaxis.set_major_locator(locator)
+    # set_x_ticks(plt)
+    # max_price = max(simulation_df["IT price"])
+    # plt.ylim((1 - max_price / 100, max_price + max_price / 100))
+    # plt.legend(loc='upper left', prop={'size': 6})
+    # # second axis
+    # ax2 = plt.twinx()
+    # chart_2 = sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2)
+    # plot_deals(deal_go_live)
+    # ax2.tick_params(labelbottom=False)
+    # chart_2.xaxis.set_major_locator(locator)
+    # plt.yticks(fontsize=6)
+    # max_RT = max(simulation_df["RT"])
+    # plt.ylim((0 - max_RT / 10, max_RT + max_RT / 10))
+    # remove_duplicate_labels(plt)
+    # plotting_areas[0].pyplot()
 
-    # second plot
-    chart_3 = sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5)
-    plot_deals(deal_go_live)
-    chart_3.xaxis.set_major_locator(locator)
-    set_x_ticks(plt)
-    remove_duplicate_labels(plt)
-    plotting_areas[1].pyplot()
-
-    # second plot
-    chart_4 = sns.lineplot(data=simulation_df[["date", "repayment pool"]].set_index("date"), palette=("red",), linewidth=0.5)
-    plot_deals(deal_go_live)
-    chart_4.xaxis.set_major_locator(locator)
-    set_x_ticks(plt)
-    remove_duplicate_labels(plt)
-    plotting_areas[2].pyplot()
-
-    # third plot
-    chart_5 = sns.lineplot(data=simulation_df[["date", "APY 30d trailing"]].set_index("date"), palette=("red",), linewidth=0.5,)
-    plot_deals(deal_go_live)
-    chart_5.xaxis.set_major_locator(locator)
-    set_x_ticks(plt)
-    remove_duplicate_labels(plt)
-    plotting_areas[3].pyplot()
+    plot_chart(plotting_areas[0], simulation_df, deal_go_live, "IT price", locator)
+    plot_chart(plotting_areas[1], simulation_df, deal_go_live, "repayment pool", locator)
+    plot_chart(plotting_areas[2], simulation_df, deal_go_live, "APY 30d trailing", locator)
+    plot_chart(plotting_areas[3], simulation_df, deal_go_live, "TVL", locator)
+    plot_chart(plotting_areas[4], simulation_df, deal_go_live, "credit outstanding", locator)
+    plot_chart(plotting_areas[5], simulation_df, deal_go_live, "credix fees", locator)
 
 
 def add_row_to_dataframe(dataframe_area, deal_row):
@@ -182,7 +175,7 @@ st.markdown("""---""")
 st.subheader("configuration")
 row1_1, row1_2 = st.columns(2)
 start_date_input = row1_1.date_input('start date of the simulation', datetime.strptime("2021-01-01", "%Y-%m-%d"))
-duration_input = row1_2.number_input('duration (months) of the simulation', value=20)
+duration_input = row1_2.number_input('duration (months) of the simulation', value=24)
 st.markdown("""---""")
 
 ################
@@ -203,14 +196,33 @@ st.markdown("""---""")
 #########
 # DEALS #
 #########
-deals = [{
-    "deal_go_live": "2021-02-01",
-    "time_to_maturity": 6,
-    "principal": 100000,
-    "financing_fee": 0.15,
-    "underwriter_fee": 0.2,
-    "leverage_ratio": 4
-}]
+deals = [
+    {
+        "deal_go_live": "2021-02-01",
+        "time_to_maturity": 12,
+        "principal": 100000,
+        "financing_fee": 0.15,
+        "underwriter_fee": 0.2,
+        "leverage_ratio": 4
+    },
+    {
+        "deal_go_live": "2021-08-01",
+        "time_to_maturity": 10,
+        "principal": 50000,
+        "financing_fee": 0.16,
+        "underwriter_fee": 0.2,
+        "leverage_ratio": 4
+    },
+    {
+        "deal_go_live": "2022-03-01",
+        "time_to_maturity": 6,
+        "principal": 150000,
+        "financing_fee": 0.19,
+        "underwriter_fee": 0.2,
+        "leverage_ratio": 4
+    },
+]
+
 deals_df = pd.DataFrame.from_dict(deals)
 
 st.subheader("DEALS")
