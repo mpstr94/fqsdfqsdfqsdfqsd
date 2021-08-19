@@ -49,66 +49,45 @@ On a monthly basis, the borrower performs an interest repayment. Those re-paymen
 All stakeholders are rewarded using Credix Tokens (CRED). Underwriters and borrowers receive an amount of BTs depending on how much USDC they stake in the credit fund, and the duration they stay locked. Borrowers get BTs if they re-pay on time and the correct amount. The supply of BTs will decrease over time, and they can be used to participate in governance decisions, and get other benefits such as early access to deals.
 '''
 
-#
-# def is_authenticated(password):
-#     return password == "c"
-#
-#
-# def generate_login_block():
-#     block1 = st.empty()
-#     block2 = st.empty()
-#
-#     return block1, block2
-#
-#
-# def clean_blocks(blocks):
-#     for block in blocks:
-#         block.empty()
-#
-#
-# def login(blocks):
-#     blocks[0].markdown("""
-#             <style>
-#                 input {
-#                     -webkit-text-security: disc;
-#                 }
-#             </style>
-#         """, unsafe_allow_html=True)
-#
-#     return blocks[1].text_input('Password')
 
-
-def plot_chart(plotting_area, simulation_df, deal_go_live, column, locator):
-    chart = sns.lineplot(data=simulation_df[["date", column]].set_index("date"), palette=("red",), linewidth=0.5)
-    plot_deals(deal_go_live)
-    chart.xaxis.set_major_locator(locator)
+def plot_chart(plotting_area, simulation_df, deal_go_live, column, locator, title, ylabel):
+    dates_x_axis = list(simulation_df.date)
+    fig, axs = plt.subplots(2,1,figsize=(16,12), gridspec_kw={'height_ratios': [4, 1]})
+    sns.lineplot(data=simulation_df[["date", column]].set_index("date"), palette=("blue",), linewidth=1, ax=axs[0])
+    axs[0].get_xaxis().set_visible(False)
+    axs[0].set_title(title, fontdict={'fontsize': 24}, pad=20)
+    axs[0].set_ylabel(ylabel, fontdict={'fontsize': 16})
+    axs[0].get_legend().remove()
+    for deal in deal_go_live:
+        axs[0].axvline(x=dates_x_axis.index(deal[0]), linewidth=0.5, linestyle='dashed', color='green')
+        axs[0].axvline(x=dates_x_axis.index(deal[1]), linewidth=0.5, linestyle='dashed', color='red')
     set_x_ticks(plt)
-    remove_duplicate_labels(plt)
+    plt.setp(axs[0].get_xticklabels(), visible=False)
+
+    min_height, max_height = plot_deals(deal_go_live, axs[1], dates_x_axis)
+    axs[1].set_ylim(ymin = min_height - 0.1, ymax = max_height + 0.1)
+    axs[1].sharex(axs[0])
+    axs[1].xaxis.set_major_locator(locator)
+    axs[1].set_xlim(xmin = 0, xmax = len(dates_x_axis))
+    axs[1].get_yaxis().set_visible(False)
+    axs[1].set_title("Deals", fontdict={'fontsize': 18})
+
     plotting_area.pyplot()
 
 
 def set_x_ticks(plt):
     plt.xticks(rotation=45, horizontalalignment='right', fontweight='light')
-    plt.xticks(fontsize=6)
-    plt.yticks(fontsize=6)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
 
 
-def plot_deals(deal_go_live):
+def plot_deals(deal_go_live, ax, dates_x_axis):
+    height = 1
     for deal in deal_go_live:
-        plt.axvline(x=deal, linewidth=0.3, linestyle='dashed', label='deal goes live', color='black')
-
-
-def remove_duplicate_labels(plt):
-    handles, labels = plt.gca().get_legend_handles_labels()
-    i = 1
-    while i < len(labels):
-        if labels[i] in labels[:i]:
-            del (labels[i])
-            del (handles[i])
-        else:
-            i += 1
-
-    plt.legend(handles, labels, prop={'size': 6})
+        ax.plot([dates_x_axis.index(deal[0]), dates_x_axis.index(deal[1])], [height, height], linewidth=1, linestyle='dashed', color='black')
+        ax.scatter([dates_x_axis.index(deal[0]), dates_x_axis.index(deal[1])], [height, height], linewidth=1, linestyle='dashed', color='black')
+        height -= 0.1
+    return height + 0.1, 1
 
 
 def run_simulation(config, plotting_areas):
@@ -116,31 +95,14 @@ def run_simulation(config, plotting_areas):
     simulation_df, deal_go_live = sim.run()
     locator = mdates.MonthLocator(interval=1)
 
-    # first plot
-    # chart_1 = sns.lineplot(data=simulation_df[["date", "IT price"]].set_index("date"), palette=("red",), linewidth=0.5)
-    # chart_1.xaxis.set_major_locator(locator)
-    # set_x_ticks(plt)
-    # max_price = max(simulation_df["IT price"])
-    # plt.ylim((1 - max_price / 100, max_price + max_price / 100))
-    # plt.legend(loc='upper left', prop={'size': 6})
-    # # second axis
-    # ax2 = plt.twinx()
-    # chart_2 = sns.lineplot(data=simulation_df.drop(columns=["IT price"]).set_index("date"), linewidth=0.5, ax=ax2)
-    # plot_deals(deal_go_live)
-    # ax2.tick_params(labelbottom=False)
-    # chart_2.xaxis.set_major_locator(locator)
-    # plt.yticks(fontsize=6)
-    # max_RT = max(simulation_df["RT"])
-    # plt.ylim((0 - max_RT / 10, max_RT + max_RT / 10))
-    # remove_duplicate_labels(plt)
-    # plotting_areas[0].pyplot()
-
-    plot_chart(plotting_areas[0], simulation_df, deal_go_live, "IT price", locator)
-    plot_chart(plotting_areas[1], simulation_df, deal_go_live, "repayment pool", locator)
-    plot_chart(plotting_areas[2], simulation_df, deal_go_live, "APY 30d trailing", locator)
-    plot_chart(plotting_areas[3], simulation_df, deal_go_live, "TVL", locator)
-    plot_chart(plotting_areas[4], simulation_df, deal_go_live, "credit outstanding", locator)
-    plot_chart(plotting_areas[5], simulation_df, deal_go_live, "credix fees", locator)
+    plot_chart(plotting_areas[0], simulation_df, deal_go_live, "APY 30d trailing", locator, "30-day trailing APY (investors)", "%")
+    plot_chart(plotting_areas[1], simulation_df, deal_go_live, "IT", locator, "Investor Tokens (IT)", "amount")
+    plot_chart(plotting_areas[2], simulation_df, deal_go_live, "RT", locator, "Reserve Tokens (RT)", "amount")
+    plot_chart(plotting_areas[3], simulation_df, deal_go_live, "IT price", locator, "IT Price", "IT price (in USDC)")
+    plot_chart(plotting_areas[4], simulation_df, deal_go_live, "TVL", locator, "Total Value Locked (without reserve)", "USDC")
+    plot_chart(plotting_areas[5], simulation_df, deal_go_live, "credit outstanding", locator, "Credit outstanding", "USDC")
+    plot_chart(plotting_areas[6], simulation_df, deal_go_live, "repayment pool", locator, "Repayment Pool", "USDC")
+    plot_chart(plotting_areas[7], simulation_df, deal_go_live, "credix fees", locator, "Credix fees", "USDC")
 
 
 def add_row_to_dataframe(dataframe_area, deal_row):
@@ -297,27 +259,34 @@ def get_config():
 
     return config
 
+st.header("Simulation")
+plotting_area_1 = st.empty()
+st.markdown("""---""")
+plotting_area_2 = st.empty()
+st.markdown("""---""")
+plotting_area_3 = st.empty()
+st.markdown("""---""")
+plotting_area_4 = st.empty()
+st.markdown("""---""")
+plotting_area_5 = st.empty()
+st.markdown("""---""")
+plotting_area_6 = st.empty()
+st.markdown("""---""")
+plotting_area_7 = st.empty()
+st.markdown("""---""")
+plotting_area_8 = st.empty()
+st.markdown("""---""")
+plotting_areas = [plotting_area_1, plotting_area_2, plotting_area_3, plotting_area_4,
+                  plotting_area_5, plotting_area_6, plotting_area_7, plotting_area_8]
 
 # RUN SIMULATION ON CLICK
 if simulate_button:
-    st.header("Simulation")
-    plotting_area_1 = st.empty()
-    plotting_area_2 = st.empty()
-    plotting_area_3 = st.empty()
-    plotting_area_4 = st.empty()
-    plotting_area_5 = st.empty()
-    plotting_area_6 = st.empty()
-    plotting_areas = [plotting_area_1, plotting_area_2, plotting_area_3, plotting_area_4, plotting_area_5, plotting_area_6]
     run_simulation(get_config(), plotting_areas)
+
+run_simulation(get_config(), plotting_areas)
 
 st.markdown("<a href='#start' id='goToTop'>Back to top</a>", unsafe_allow_html=True)
 
-
-## LOGIN PART
-#login_blocks = generate_login_block()
-#password = login(login_blocks)
-#
-# # render_simulation()
 top_of_page_html = '''
     <script language="javascript">
     document.addEventListener('DOMContentLoaded', (event) => {
@@ -327,28 +296,3 @@ top_of_page_html = '''
     </script>
     '''
 components.html(top_of_page_html)
-
-# if is_authenticated(password):
-#     clean_blocks(login_blocks)
-#     render_simulation()
-#     # SCROLL TO TOP OF PAGE
-#     top_of_page_html = '''
-#     <script language="javascript">
-#      console.log("scrolling to top")
-#      function docReady(fn) {
-#             // see if DOM is already available
-#             if (document.readyState === "complete" || document.readyState === "interactive") {
-#                 // call on next available tick
-#                 setTimeout(fn, 1);
-#             } else {
-#                 document.addEventListener("DOMContentLoaded", fn);
-#             }
-#         }
-#     docReady(function() {
-#         document.getElementById('goToTop').click();
-#     });
-#     </script>
-#     '''
-#     components.html(top_of_page_html)
-# elif password:
-#     st.info("Please enter a valid password")
