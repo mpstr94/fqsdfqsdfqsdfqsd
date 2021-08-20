@@ -165,7 +165,9 @@ deals = [
         "principal": 100000,
         "financing_fee": 0.15,
         "underwriter_fee": 0.2,
-        "leverage_ratio": 4
+        "leverage_ratio": 4,
+        "repay_fraction_interest": 1,
+        "repay_fraction_principal": 1
     },
     {
         "deal_go_live": "2021-08-01",
@@ -173,7 +175,9 @@ deals = [
         "principal": 50000,
         "financing_fee": 0.16,
         "underwriter_fee": 0.2,
-        "leverage_ratio": 4
+        "leverage_ratio": 4,
+        "repay_fraction_interest": 1,
+        "repay_fraction_principal": 1
     },
     {
         "deal_go_live": "2022-03-01",
@@ -181,7 +185,9 @@ deals = [
         "principal": 150000,
         "financing_fee": 0.19,
         "underwriter_fee": 0.2,
-        "leverage_ratio": 4
+        "leverage_ratio": 4,
+        "repay_fraction_interest": 1,
+        "repay_fraction_principal": 1
     },
 ]
 
@@ -209,6 +215,8 @@ principal_input = row4_1.number_input("principal", value=100000)
 financing_fee_input = row4_2.number_input("financing fee", value=0.15)
 underwriter_fee_input = row4_1.number_input("underwriter fee", value=0.2)
 leverage_ratio_input = row4_2.number_input("leverage ratio", value=4)
+repay_fraction_interest_input = row4_1.number_input("repay fraction of interest", value=1.0)
+repay_fraction_principal_input = row4_2.number_input("repay fraction of principal", value=1.0)
 
 row4_1, _, _ = st.columns((6, 0.5, 3))
 add_deal_button = row4_1.button("add deal")
@@ -226,7 +234,9 @@ if add_deal_button:
         "principal": principal_input,
         "financing_fee": financing_fee_input,
         "underwriter_fee": underwriter_fee_input,
-        "leverage_ratio": leverage_ratio_input
+        "leverage_ratio": leverage_ratio_input,
+        "repay_fraction_interest": repay_fraction_interest_input,
+        "repay_fraction_principal": repay_fraction_principal_input
     }
     add_row_to_dataframe(dataframe_area, deal_row)
 
@@ -259,6 +269,7 @@ def get_config():
 
     return config
 
+
 st.header("Simulation")
 plotting_area_1 = st.empty()
 st.markdown("""---""")
@@ -283,7 +294,7 @@ plotting_areas = [plotting_area_1, plotting_area_2, plotting_area_3, plotting_ar
 if simulate_button:
     run_simulation(get_config(), plotting_areas)
 
-run_simulation(get_config(), plotting_areas)
+# run_simulation(get_config(), plotting_areas)
 
 st.markdown("<a href='#start' id='goToTop'>Back to top</a>", unsafe_allow_html=True)
 
