@@ -158,9 +158,9 @@ with stakeholder_expander:
 
 row2_1, row2_2 = st.columns(2)
 row2_1.subheader("investors")
-n_investors_input = row2_1.number_input('number of investors', min_value=0, value=20)
+n_investors_input = row2_1.number_input('number of investors', min_value=0, value=20, help="Set the number of investors. Each investor has 10.000 USDC in its wallet at the start of the simulation.")
 row2_2.subheader("underwriters")
-n_underwriters_input = row2_2.number_input('number of underwriters', min_value=0, value=5)
+n_underwriters_input = row2_2.number_input('number of underwriters', min_value=0, value=5, help="Set the number of underwriters. Each underwriter has 100.000 USDC in its wallet at the start of the simulation.")
 st.markdown("""---""")
 
 #########
@@ -218,18 +218,18 @@ row3_4.subheader("remove deals")
 row4_1, row4_2, row4_3, row4_4 = st.columns((3, 3, 0.5, 3))
 deal_go_live_input = row4_1.date_input('go live date', datetime.strptime("2021-02-01", "%Y-%m-%d"))
 # months_after_sim_start_input = row4_1.number_input("go live (months)", value=1)
-time_to_maturity_input = row4_2.number_input("time to maturity", value=6)
-principal_input = row4_1.number_input("principal", value=100000)
-financing_fee_input = row4_2.number_input("financing fee", value=0.15)
-underwriter_fee_input = row4_1.number_input("underwriter fee", value=0.2)
-leverage_ratio_input = row4_2.number_input("leverage ratio", value=4)
-repay_fraction_interest_input = row4_1.number_input("repay fraction of interest", value=1.0)
-repay_fraction_principal_input = row4_2.number_input("repay fraction of principal", value=1.0)
+time_to_maturity_input = row4_2.number_input("time to maturity", value=6, help="Number of months before the principal is paid back in full.")
+principal_input = row4_1.number_input("principal", value=100000, help="The total amount of the credit line in USDC.")
+financing_fee_input = row4_2.number_input("financing fee", value=0.15, help="The percentage of the principal (= sur plus) that has to be repaid as interest, e.g. 15% (⇒ total interest = USDC 150.000).")
+underwriter_fee_input = row4_1.number_input("underwriter fee", value=0.2, help="The percentage taken by the underwriters on the repaid interest to the investors. Acts as a reward for taking more risk.")
+leverage_ratio_input = row4_2.number_input("leverage ratio", value=4, help="The ratio of the size of the senior tranche over the junior tranche e.g. 4 ⇒ For every 4 parts senior tranche, there is 1 part junior tranche (= 80% senior, 20% junior).")
+repay_fraction_interest_input = row4_1.number_input("repay fraction of interest", value=1.0, help="In an ideal scenario, the full interest payment is made every month. Using this setting, you can simulate unhappy flows by changing the percentage per interest payment that is made. If an interest payment is 100 USDC and this setting is 0.8, only 80 USDC will be repaid every month.")
+repay_fraction_principal_input = row4_2.number_input("repay fraction of principal", value=1.0, help="In an ideal scenario, the full principal payment is made at time of maturity. Using this setting, you can simulate unhappy flows by changing the percentage of the principal payment that is made. If the principal payment is 1000 USDC and this setting is 0.8, only 800 USDC will be repaid at time of maturity.")
 
 row5_1, _, _ = st.columns((6, 0.5, 3))
 add_deal_button = row5_1.button("add deal")
 
-index_to_remove_deal_input = row4_4.number_input("deal index to remove", value=0)
+index_to_remove_deal_input = row4_4.number_input("deal index to remove", value=0, help="In the table above, every deal has an index (most outer left column). You can delete deals by index.")
 remove_deal_button = row4_4.button("remove deal")
 st.markdown("""---""")
 
@@ -280,13 +280,13 @@ row6_1.subheader("add withdrawal")
 row6_4.subheader("remove withdrawal")
 
 row7_1, row7_2, row7_3, row7_4 = st.columns((3, 3, 0.5, 3))
-withdrawal_date_input = row7_1.date_input('withdrawal date', datetime.strptime("2021-06-01", "%Y-%m-%d"))
-IT_amount_input = row7_2.number_input("IT amount", value=10000)
+withdrawal_date_input = row7_1.date_input('withdrawal date', datetime.strptime("2021-06-01", "%Y-%m-%d"), help="At this date, a number of investors will be selected to withdraw 'IT amount' from Credix. Their IT will be converted into USDC at the current IT price. Credix will first try to swap IT's with RT holders. If there are no RT holders, IT's will be burned and the investors will receive USDC from the repayment pool.")
+IT_amount_input = row7_2.number_input("IT amount", value=10000, help="The total amount of IT to be withdrawn.")
 
 row8_1, _, _ = st.columns((6, 0.5, 3))
 add_withdrawal_button = row8_1.button("add withdrawal")
 
-index_to_remove_withdrawal_input = row7_4.number_input("withdrawal index to remove", value=0)
+index_to_remove_withdrawal_input = row7_4.number_input("withdrawal index to remove", value=0, help="In the table above, every withdrawal has an index (most outer left column). You can delete withdrawals by index.")
 remove_withdrawal_button = row7_4.button("remove withdrawal")
 st.markdown("""---""")
 
