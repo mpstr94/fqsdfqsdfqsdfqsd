@@ -50,7 +50,7 @@ All stakeholders are rewarded using Credix Tokens (CRED). Underwriters and borro
 '''
 
 
-def plot_chart(plotting_area, simulation_df, deal_go_live, column, locator, title, ylabel):
+def plot_chart(plotting_area, simulation_df, deal_go_live_and_maturity, withdrawal_dates, column, locator, title, ylabel):
     dates_x_axis = list(simulation_df.date)
     fig, axs = plt.subplots(2,1,figsize=(16,12), gridspec_kw={'height_ratios': [4, 1]})
     sns.lineplot(data=simulation_df[["date", column]].set_index("date"), palette=("blue",), linewidth=1, ax=axs[0])
@@ -58,19 +58,22 @@ def plot_chart(plotting_area, simulation_df, deal_go_live, column, locator, titl
     axs[0].set_title(title, fontdict={'fontsize': 24}, pad=20)
     axs[0].set_ylabel(ylabel, fontdict={'fontsize': 16})
     axs[0].get_legend().remove()
-    for deal in deal_go_live:
+    for deal in deal_go_live_and_maturity:
         axs[0].axvline(x=dates_x_axis.index(deal[0]), linewidth=0.5, linestyle='dashed', color='green')
         axs[0].axvline(x=dates_x_axis.index(deal[1]), linewidth=0.5, linestyle='dashed', color='red')
+    for withdrawal_date in withdrawal_dates:
+        axs[0].axvline(x=dates_x_axis.index(withdrawal_date), linewidth=0.5, linestyle='dashed', color='black')
     set_x_ticks(plt)
     plt.setp(axs[0].get_xticklabels(), visible=False)
 
-    min_height, max_height = plot_deals(deal_go_live, axs[1], dates_x_axis)
+    min_height, max_height = plot_deals(deal_go_live_and_maturity, axs[1], dates_x_axis)
+    plot_widthdrawals(withdrawal_dates, axs[1], dates_x_axis)
     axs[1].set_ylim(ymin = min_height - 0.1, ymax = max_height + 0.1)
     axs[1].sharex(axs[0])
     axs[1].xaxis.set_major_locator(locator)
     axs[1].set_xlim(xmin = 0, xmax = len(dates_x_axis))
     axs[1].get_yaxis().set_visible(False)
-    axs[1].set_title("Deals", fontdict={'fontsize': 18})
+    axs[1].set_title("Deals (---) & withdrawals (◼️)", fontdict={'fontsize': 18})
 
     plotting_area.pyplot()
 
@@ -81,47 +84,52 @@ def set_x_ticks(plt):
     plt.yticks(fontsize=10)
 
 
-def plot_deals(deal_go_live, ax, dates_x_axis):
+def plot_deals(deal_go_live_and_maturity, ax, dates_x_axis):
     height = 1
-    for deal in deal_go_live:
+    for deal in deal_go_live_and_maturity:
         ax.plot([dates_x_axis.index(deal[0]), dates_x_axis.index(deal[1])], [height, height], linewidth=1, linestyle='dashed', color='black')
-        ax.scatter([dates_x_axis.index(deal[0]), dates_x_axis.index(deal[1])], [height, height], linewidth=1, linestyle='dashed', color='black')
+        ax.scatter([dates_x_axis.index(deal[0])], [height], s=100, linewidth=1, linestyle='dashed', color='green')
+        ax.scatter([dates_x_axis.index(deal[1])], [height], s=100, linewidth=1, linestyle='dashed', color='red')
         height -= 0.1
-    return height + 0.1, 1
+    return height - 0.1, 1.1
+
+
+def plot_widthdrawals(withdrawal_dates, ax, dates_x_axis):
+    for withdrawal_date in withdrawal_dates:
+        ax.scatter([dates_x_axis.index(withdrawal_date)], [1.1], s=100, color='black', marker="s")
 
 
 def run_simulation(config, plotting_areas):
     sim = MainSimulation(config=config)
-    simulation_df, deal_go_live = sim.run()
+    simulation_df, deal_go_live_and_maturity, withdrawal_dates = sim.run()
     locator = mdates.MonthLocator(interval=1)
+    plot_chart(plotting_areas[0], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "APY 30d trailing", locator, "30-day trailing APY (investors)", "%")
+    plot_chart(plotting_areas[1], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "IT", locator, "Investor Tokens (IT)", "amount")
+    plot_chart(plotting_areas[2], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "RT", locator, "Reserve Tokens (RT)", "amount")
+    plot_chart(plotting_areas[3], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "IT price", locator, "IT Price", "IT price (in USDC)")
+    plot_chart(plotting_areas[4], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "TVL", locator, "Total Value Locked (without reserve)", "USDC")
+    plot_chart(plotting_areas[5], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "credit outstanding", locator, "Credit outstanding", "USDC")
+    plot_chart(plotting_areas[6], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "repayment pool", locator, "Repayment Pool", "USDC")
+    plot_chart(plotting_areas[7], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "credix fees", locator, "Credix fees", "USDC")
 
-    plot_chart(plotting_areas[0], simulation_df, deal_go_live, "APY 30d trailing", locator, "30-day trailing APY (investors)", "%")
-    plot_chart(plotting_areas[1], simulation_df, deal_go_live, "IT", locator, "Investor Tokens (IT)", "amount")
-    plot_chart(plotting_areas[2], simulation_df, deal_go_live, "RT", locator, "Reserve Tokens (RT)", "amount")
-    plot_chart(plotting_areas[3], simulation_df, deal_go_live, "IT price", locator, "IT Price", "IT price (in USDC)")
-    plot_chart(plotting_areas[4], simulation_df, deal_go_live, "TVL", locator, "Total Value Locked (without reserve)", "USDC")
-    plot_chart(plotting_areas[5], simulation_df, deal_go_live, "credit outstanding", locator, "Credit outstanding", "USDC")
-    plot_chart(plotting_areas[6], simulation_df, deal_go_live, "repayment pool", locator, "Repayment Pool", "USDC")
-    plot_chart(plotting_areas[7], simulation_df, deal_go_live, "credix fees", locator, "Credix fees", "USDC")
 
-
-def add_row_to_dataframe(dataframe_area, deal_row):
+def add_row_to_dataframe(dataframe_area, dataframe_name, deal_row):
     try:
-        st.session_state.df = st.session_state.df.append(deal_row, ignore_index=True)
-        st.session_state.df = st.session_state.df.astype({
-            "time_to_maturity": 'int64',
-            "principal": 'int64',
-            "leverage_ratio": 'int64'
-        })
-        dataframe_area.dataframe(st.session_state.df)
+        st.session_state[dataframe_name] = st.session_state[dataframe_name].append(deal_row, ignore_index=True)
+        # st.session_state.deals_df = st.session_state.deals_df.astype({
+        #     "time_to_maturity": 'int64',
+        #     "principal": 'int64',
+        #     "leverage_ratio": 'int64'
+        # })
+        dataframe_area.dataframe(st.session_state[dataframe_name])
     except:
         pass
 
 
-def remove_row_from_dataframe(dataframe_area, index):
-    if index in st.session_state.df.index:
-        st.session_state.df = st.session_state.df.drop(index).reset_index(drop=True)
-        dataframe_area.dataframe(st.session_state.df)
+def remove_row_from_dataframe(dataframe_area, dataframe_name, index):
+    if index in st.session_state[dataframe_name].index:
+        st.session_state[dataframe_name] = st.session_state[dataframe_name].drop(index).reset_index(drop=True)
+        dataframe_area.dataframe(st.session_state[dataframe_name])
 
 
 ##############
@@ -137,7 +145,7 @@ st.markdown("""---""")
 st.subheader("configuration")
 row1_1, row1_2 = st.columns(2)
 start_date_input = row1_1.date_input('start date of the simulation', datetime.strptime("2021-01-01", "%Y-%m-%d"))
-duration_input = row1_2.number_input('duration (months) of the simulation', value=24)
+duration_input = row1_2.number_input('duration (months) of the simulation', value=36)
 st.markdown("""---""")
 
 ################
@@ -150,9 +158,9 @@ with stakeholder_expander:
 
 row2_1, row2_2 = st.columns(2)
 row2_1.subheader("investors")
-n_investors_input = row2_1.number_input('number of investors', min_value=0, value=100)
+n_investors_input = row2_1.number_input('number of investors', min_value=0, value=20)
 row2_2.subheader("underwriters")
-n_underwriters_input = row2_2.number_input('number of underwriters', min_value=0, value=10)
+n_underwriters_input = row2_2.number_input('number of underwriters', min_value=0, value=5)
 st.markdown("""---""")
 
 #########
@@ -171,9 +179,9 @@ deals = [
     },
     {
         "deal_go_live": "2021-08-01",
-        "time_to_maturity": 10,
-        "principal": 50000,
-        "financing_fee": 0.16,
+        "time_to_maturity": 12,
+        "principal": 100000,
+        "financing_fee": 0.15,
         "underwriter_fee": 0.2,
         "leverage_ratio": 4,
         "repay_fraction_interest": 1,
@@ -181,9 +189,9 @@ deals = [
     },
     {
         "deal_go_live": "2022-03-01",
-        "time_to_maturity": 6,
-        "principal": 150000,
-        "financing_fee": 0.19,
+        "time_to_maturity": 12,
+        "principal": 100000,
+        "financing_fee": 0.15,
         "underwriter_fee": 0.2,
         "leverage_ratio": 4,
         "repay_fraction_interest": 1,
@@ -198,10 +206,10 @@ deal_expander = st.expander(label='Learn about deals')
 with deal_expander:
     st.markdown(deals_text)
 # persist state of dataframe
-if 'df' not in st.session_state:
-    st.session_state.df = deals_df
-dataframe_area = st.empty()
-dataframe_area.dataframe(st.session_state.df)
+if 'deals_df' not in st.session_state:
+    st.session_state["deals_df"] = deals_df
+deals_dataframe_area = st.empty()
+deals_dataframe_area.dataframe(st.session_state["deals_df"])
 
 row3_1, _, _, row3_4 = st.columns((3, 3, 0.5, 3))
 row3_1.subheader("add deals")
@@ -218,10 +226,10 @@ leverage_ratio_input = row4_2.number_input("leverage ratio", value=4)
 repay_fraction_interest_input = row4_1.number_input("repay fraction of interest", value=1.0)
 repay_fraction_principal_input = row4_2.number_input("repay fraction of principal", value=1.0)
 
-row4_1, _, _ = st.columns((6, 0.5, 3))
-add_deal_button = row4_1.button("add deal")
+row5_1, _, _ = st.columns((6, 0.5, 3))
+add_deal_button = row5_1.button("add deal")
 
-index_to_remove_input = row4_4.number_input("index to remove", value=0)
+index_to_remove_deal_input = row4_4.number_input("deal index to remove", value=0)
 remove_deal_button = row4_4.button("remove deal")
 st.markdown("""---""")
 
@@ -238,10 +246,61 @@ if add_deal_button:
         "repay_fraction_interest": repay_fraction_interest_input,
         "repay_fraction_principal": repay_fraction_principal_input
     }
-    add_row_to_dataframe(dataframe_area, deal_row)
+    add_row_to_dataframe(deals_dataframe_area, "deals_df", deal_row)
 
 if remove_deal_button:
-    remove_row_from_dataframe(dataframe_area, index_to_remove_input)
+    remove_row_from_dataframe(deals_dataframe_area, "deals_df", index_to_remove_deal_input)
+
+###############
+# WITHDRAWALS #
+###############
+IT_withdrawals = [
+        {
+            "withdrawal_date": "2021-10-01",
+            "IT_amount": 2000
+        },
+        {
+            "withdrawal_date": "2022-07-01",
+            "IT_amount": 100000
+        }
+    ]
+
+withdrawals_df = pd.DataFrame.from_dict(IT_withdrawals)
+
+st.subheader("WITHDRAWALS")
+
+# persist state of dataframe
+if 'withdrawals_df' not in st.session_state:
+    st.session_state["withdrawals_df"] = withdrawals_df
+withdrawals_dataframe_area = st.empty()
+withdrawals_dataframe_area.dataframe(st.session_state["withdrawals_df"])
+
+row6_1, _, _, row6_4 = st.columns((3, 3, 0.5, 3))
+row6_1.subheader("add withdrawal")
+row6_4.subheader("remove withdrawal")
+
+row7_1, row7_2, row7_3, row7_4 = st.columns((3, 3, 0.5, 3))
+withdrawal_date_input = row7_1.date_input('withdrawal date', datetime.strptime("2021-06-01", "%Y-%m-%d"))
+IT_amount_input = row7_2.number_input("IT amount", value=10000)
+
+row8_1, _, _ = st.columns((6, 0.5, 3))
+add_withdrawal_button = row8_1.button("add withdrawal")
+
+index_to_remove_withdrawal_input = row7_4.number_input("withdrawal index to remove", value=0)
+remove_withdrawal_button = row7_4.button("remove withdrawal")
+st.markdown("""---""")
+
+# WITHDRAWALS INTERACTIVE DF
+if add_withdrawal_button:
+    # update dataframe state
+    withdrawal_row = {
+        "withdrawal_date": withdrawal_date_input.strftime("%Y-%m-%d"),
+        "IT_amount": IT_amount_input
+    }
+    add_row_to_dataframe(withdrawals_dataframe_area, "withdrawals_df", withdrawal_row)
+
+if remove_withdrawal_button:
+    remove_row_from_dataframe(withdrawals_dataframe_area, "withdrawals_df", index_to_remove_withdrawal_input)
 
 ##############
 # SIMULATION #
@@ -254,17 +313,18 @@ def get_config():
     config = {
         "investors": {
             "amount": n_investors_input,
-            "USDC_balance": [40000,50000]
+            "USDC_balance": [10000,10000]
         },
         "underwriters": {
             "amount": n_underwriters_input,
-            "USDC_balance": [100000, 500000]
+            "USDC_balance": [100000, 100000]
         },
         "simulation": {
             "start_date": start_date_input.strftime("%Y-%m-%d"),
             "duration_months": duration_input,
         },
-        "deals": st.session_state.df.to_dict("records")
+        "deals": st.session_state["deals_df"].to_dict("records"),
+        "IT_withdrawals": st.session_state["withdrawals_df"].to_dict("records")
     }
 
     return config
