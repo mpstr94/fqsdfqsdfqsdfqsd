@@ -103,14 +103,14 @@ def run_simulation(config, plotting_areas):
     sim = MainSimulation(config=config)
     simulation_df, deal_go_live_and_maturity, withdrawal_dates = sim.run()
     locator = mdates.MonthLocator(interval=1)
-    plot_chart(plotting_areas[0], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "APY 30d trailing", locator, "30-day trailing APY (investors)", "%")
+    plot_chart(plotting_areas[0], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "RT", locator, "Reserve Tokens (RT)", "amount")
     plot_chart(plotting_areas[1], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "IT", locator, "Investor Tokens (IT)", "amount")
-    plot_chart(plotting_areas[2], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "RT", locator, "Reserve Tokens (RT)", "amount")
-    plot_chart(plotting_areas[3], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "IT price", locator, "IT Price", "IT price (in USDC)")
-    plot_chart(plotting_areas[4], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "TVL", locator, "Total Value Locked (without reserve)", "USDC")
-    plot_chart(plotting_areas[5], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "credit outstanding", locator, "Credit outstanding", "USDC")
-    plot_chart(plotting_areas[6], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "repayment pool", locator, "Repayment Pool", "USDC")
-    plot_chart(plotting_areas[7], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "credix fees", locator, "Credix fees", "USDC")
+    plot_chart(plotting_areas[2], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "TVL", locator, "Total Value Locked (without reserve)", "USDC")
+    plot_chart(plotting_areas[3], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "credit outstanding", locator, "Credit outstanding", "USDC")
+    plot_chart(plotting_areas[4], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "repayment pool", locator, "Repayment Pool", "USDC")
+    plot_chart(plotting_areas[5], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "credix fees", locator, "Credix fees", "USDC")
+    plot_chart(plotting_areas[6], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "IT price", locator, "IT Price", "IT price (in USDC)")
+    plot_chart(plotting_areas[7], simulation_df, deal_go_live_and_maturity, withdrawal_dates, "APY 30d trailing", locator, "30-day trailing APY (investors)", "%")
 
 
 def add_row_to_dataframe(dataframe_area, dataframe_name, deal_row):
